@@ -7,8 +7,18 @@ const specialSets = [
   'rna',
   'jou',
   'dgm',
-  'frf'
+  'frf',
+  'ice',
+  'all',
+  'mh1',
+  'csp',
+  'ogw',
+  'isd',
+  'dka',
+  'soi',
+  'emn'
 ]
+
 const lands = [
   {
     id: '58fe058d-7796-4233-8d74-2a12f9bd0023',
@@ -61,7 +71,9 @@ const lands = [
     }
   }
 ];
+
 const baseBoosterUrl = 'https://api.scryfall.com/cards/search?order=set&q=set%3A{0}+unique%3Acards+is%3Abooster+-type%3Abasic&unique=cards&is=booster';
+
 const colorMap = {
   W: 'white',
   U: 'blue',
@@ -72,16 +84,18 @@ const colorMap = {
 
 function mapCard(card) {
   let description = card.oracle_text;
+
   if (card.card_faces) {
     description = card.card_faces.map(cardFace => cardFace.name + ' - ' + cardFace.oracle_text).join('<br/>');
   }
+
   return {
     id: card.id,
     name: card.name,
     description: description,
-    imageUrl: card.image_uris.large,
+    imageUrl: card.image_uris ? card.image_uris.large : card.card_faces[0].image_uris.large,
     cmc: card.cmc,
-    colors: card.colors.map(item => colorMap[item])
+    colors: (card.colors ? card.colors : card.card_faces[0].colors).map(item => colorMap[item])
   };
 }
 
@@ -122,20 +136,25 @@ function makePacks(cards, set, count, callback) {
   callback(boosters);
 }
 
-function cardGrabber(request, url, set, count, callback, cards) {
+function cardGrabber(request, url, set, count, callback, cards, retryCount = 0) {
   request.get({
     url: url,
     json: true,
     headers: { 'User-Agent': 'request' }
   }, (err, _, data) => {
-    if (err) {
+    if ((err || data.status >= 400) && retryCount < 10) {
+      console.log(url);
+      console.log(err || data);
+      cardGrabber(request, url, set, count, callback, cards, retryCount + 1);
+    } else if (err || data.status >= 400) {
       throw err;
-    }
-    const newCards = cards.concat(data.data);
-    if (data.has_more) {
-      cardGrabber(request, data.next_page, set, count, callback, newCards)
     } else {
-      makePacks(newCards, set, count, callback);
+      const newCards = cards.concat(data.data);
+      if (data.has_more) {
+        cardGrabber(request, data.next_page, set, count, callback, newCards)
+      } else {
+        makePacks(newCards, set, count, callback);
+      }
     }
   });
 }
