@@ -199,6 +199,21 @@ function getRandomIndex(length = 0)
     return Math.floor(Math.random() * length);
 }
 
+function getRandomNonDuplicateIndex( length = 0, countOfCards =0 )
+{
+  let resulting_indexes = [];
+  for( let i =0; i < countOfCards; i++ )
+  {
+    let current_index = getRandomIndex( length );
+    while( resulting_indexes.indexOf(current_index) !== -1 )
+    {
+      current_index = getRandomIndex( length );
+    }
+    resulting_indexes.push( current_index );
+  }
+  return resulting_indexes;
+}
+
 function generatePacks(cards, count, lands, mapCard)
 {
     const boosters = [];
@@ -210,45 +225,49 @@ function generatePacks(cards, count, lands, mapCard)
 
     while( boosters.length < count )
     {
-        if( getRandomIndex(ratio_of_god_packs) === 540 )
-        {//create a god pack
-            let booster = [...god_pack];
-            //put the land in 
-            booster.push(lands[getRandomIndex(lands.length)]);
-            //Unpackages the card
-            boosters.push(booster.map(mapCard));
-        }
-        else
+      if( getRandomIndex(ratio_of_god_packs) === 540 )
+      {//create a god pack
+        let booster = [...god_pack];
+        //put the land in 
+        booster.push(lands[getRandomIndex(lands.length)]);
+        //Unpackages the card
+        boosters.push(booster.map(mapCard));
+      }
+      else
+      {
+        let booster = [];
+        //create a boolean to indicate if we have a foil
+        const isFoil = getRandomIndex(6) === 2;
+        //populate the commons
+        let common_indexes = getRandomNonDuplicateIndex( commons.length, (isFoil ? 10 : 11) );
+        for(let i = 0; i < common_indexes.length; i++) 
         {
-            let booster = [];
-            //create a boolean to indicate if we have a foil
-            const isFoil = getRandomIndex(6) === 2;
-            //populate the commons
-            for(let i = 0; i < (isFoil ? 10 : 11); i++) 
-            {
-                booster.push(commons[getRandomIndex(commons.length)]);
-            }
-            //populate the uncommons
-            for(let i = 0; i < 3; i++) 
-            {
-                booster.push(uncommons[getRandomIndex(uncommons.length)]);
-            }
-            //populate the rares and mythics
-            booster.push(rares[getRandomIndex(rares.length)]);
-            //fill in the foil cards
-            if (isFoil) 
-            {
-                booster.push(
-                {
-                    ...cards[getRandomIndex(cards.length)],
-                    isFoil: true
-                });
-            }
-            //put the land in 
-            booster.push(lands[getRandomIndex(lands.length)]);
-            //Unpackages the card
-            boosters.push(booster.map(mapCard));
+          let card_to_add = commons[common_indexes[i]];
+          booster.push(card_to_add);
         }
+        //populate the uncommons
+        let uncommon_indexes = getRandomNonDuplicateIndex( uncommons.length, 3 )
+        for(let i = 0; i < uncommon_indexes.length; i++) 
+        {
+         let card_to_add = uncommons[uncommon_indexes[i]];
+          booster.push(card_to_add);
+        }
+        //populate the rares and mythics
+        booster.push(rares[getRandomIndex(rares.length)]);
+
+        if (isFoil) 
+        {
+          booster.push
+          ({
+              ...cards[getRandomIndex(cards.length)],
+              isFoil: true
+          });
+        }
+        //put the land in 
+        booster.push(lands[getRandomIndex(lands.length)]);
+        //Unpackages the card
+        boosters.push(booster.map(mapCard));
+      }
     }
     return boosters;
 }
