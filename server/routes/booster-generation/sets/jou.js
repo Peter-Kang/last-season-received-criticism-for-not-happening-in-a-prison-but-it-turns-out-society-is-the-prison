@@ -1,3 +1,5 @@
+const Utility = require('../utility');
+
 const godPack  = 
 [
   {
@@ -194,91 +196,24 @@ const godPack  =
 
 const godPackRatio = 1080;
 
-function getRandomIndex(length = 0) 
-{
-  return Math.floor(Math.random() * length);
-}
-
-function getRandomNonDuplicateIndex( length = 0, countOfCards =0 )
-{
-  let resulting_indexes = [];
-  for( let i =0; i < countOfCards; i++ )
-  {
-    let current_index = getRandomIndex( length );
-    while( resulting_indexes.indexOf(current_index) !== -1 )
-    {
-      current_index = getRandomIndex( length );
-    }
-    resulting_indexes.push( current_index );
-  }
-  return resulting_indexes;
-}
-
-function generatePacks(cards, count, lands, mapCard)
+function generatePacks(cards, count, lands)
 {
   const boosters = [];
-  const commons = cards.filter(card => card.rarity === 'common');
-  const uncommons = cards.filter(card => card.rarity === 'uncommon');
-  let rares = cards.filter(card => card.rarity === 'rare');
-  rares = rares.concat(rares);
-  rares.concat(cards.filter(card => card.rarity === 'mythic'));
-
+  const prePacks = Utility.makeGenericPacks(cards, count, lands);
   while( boosters.length < count )
   {
-    if( getRandomIndex(godPackRatio) === 540 )
+    if(Utility.getRandomIndex(godPackRatio) === 540)
     {
-      //create a god pack
+      // Create a god pack
       const booster = [...godPack];
-      //put the land in 
-      booster.push(lands[getRandomIndex(lands.length)]);
-      //Unpackages the card
-      boosters.push(booster.map(mapCard));
+      // Put the land in 
+      booster.push(Utility.getRandomCard(lands, booster, false));
+      // Unpackages the card
+      boosters.push(booster);
     }
     else
     {
-      if( getRandomIndex(ratio_of_god_packs) === 540 )
-      {//create a god pack
-        let booster = [...god_pack];
-        //put the land in 
-        booster.push(lands[getRandomIndex(lands.length)]);
-        //Unpackages the card
-        boosters.push(booster.map(mapCard));
-      }
-      else
-      {
-        let booster = [];
-        //create a boolean to indicate if we have a foil
-        const isFoil = getRandomIndex(6) === 2;
-        //populate the commons
-        let common_indexes = getRandomNonDuplicateIndex( commons.length, (isFoil ? 10 : 11) );
-        for(let i = 0; i < common_indexes.length; i++) 
-        {
-          let card_to_add = commons[common_indexes[i]];
-          booster.push(card_to_add);
-        }
-        //populate the uncommons
-        let uncommon_indexes = getRandomNonDuplicateIndex( uncommons.length, 3 )
-        for(let i = 0; i < uncommon_indexes.length; i++) 
-        {
-         let card_to_add = uncommons[uncommon_indexes[i]];
-          booster.push(card_to_add);
-        }
-        //populate the rares and mythics
-        booster.push(rares[getRandomIndex(rares.length)]);
-
-        if (isFoil) 
-        {
-          booster.push
-          ({
-              ...cards[getRandomIndex(cards.length)],
-              isFoil: true
-          });
-        }
-        //put the land in 
-        booster.push(lands[getRandomIndex(lands.length)]);
-        //Unpackages the card
-        boosters.push(booster.map(mapCard));
-      }
+      boosters.push(prePacks.pop());
     }
   }
   return boosters;
